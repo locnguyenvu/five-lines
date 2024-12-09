@@ -42,7 +42,7 @@ class Resting implements FallingState {
     return true;
   }
   moveHorizontal(tile: Tile, dx: number) {
-    player.pushHorizontal(tile, dx);
+    player.pushHorizontal(map, tile, dx);
   }
   drop(tile: Tile, x: number, y: number) {
     return;
@@ -463,15 +463,14 @@ class Player {
   moveRight() {
     map.getTile(this.y, this.x + 1).moveHorizontal(1);
   }
-  canMoveHorizontal(dx: number) {
-    return map.isAir(this.y, this.x + dx + dx) &&
-      !map.isAir(player.y + 1, player.y + dx);
+  pushHorizontal(map: Map, tile: Tile, dx: number) {
+    map.pushHorizontal(this, tile, this.x, this.y, dx);
+    
   }
-  pushHorizontal(tile: Tile, dx: number) {
-    if (this.canMoveHorizontal(dx)) {
-      map.setTile(this.y, this.x + dx + dx, tile);
-      this.moveHorizontal(dx);
-    }
+  moveToTile(map: Map, newx: number, newy: number) {
+    map.movePlayer(this.x, this.y, newx, newy);
+    this.x = newx;
+    this.y = newy;
   }
 }
 
@@ -548,7 +547,6 @@ class Map {
   update() {
     for (let y = this.map.length - 1; y >= 0; y--) {
       for (let x = 0; x < this.map[y].length; x++) {
-        // updateTile(x, y)
         this.map[y][x].update(x, y)
       }
     }
@@ -583,6 +581,13 @@ class Map {
     this.map[y+1][x] = tile;
     this.map[y][x] = new Air();
   }
+  pushHorizontal(player: Player, tile: Tile, x: number, y: number, dx: number) {
+    if (this.map[y][x + dx + dx].isAir()
+        && !this.map[y + 1][x + dx].isAir()) {
+          this.map[y][x + dx + dx] = tile
+          player.moveToTile(this, x + dx, y);
+      }
+  }
 }
 
 let map = new Map();
@@ -597,7 +602,6 @@ let inputs: Input[] = [];
 
 function update() {
   handleInputs();
-  // updateMap()
   map.update();
 }
 
@@ -611,7 +615,6 @@ function handleInputs() {
 function draw() {
   let g = createGraphics();
   map.draw(g);
-  // drawMap(g);
   player.draw(g);
 }
 
